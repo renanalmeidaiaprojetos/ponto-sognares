@@ -262,6 +262,7 @@ nav{background:#fff;border-top:1px solid var(--bd);display:flex;padding:7px 16px
     <button class="btn-sec" onclick="sincronizarPendentes()">🔄 Sincronizar pendentes com Sheets</button>
     <button class="btn-sec" onclick="exportarCSV()">📥 Exportar espelho em CSV</button>
     <button class="btn-danger" onclick="confirmarLimpar()">🗑️ Apagar todos os registros</button>
+    <button class="btn-alterar-senha" onclick="configurarURL()">⚙️ configurar URL do Google Sheets</button>
     <button class="btn-alterar-senha" onclick="alterarSenha()">alterar senha do gestor</button>
 
   </div>
@@ -455,6 +456,14 @@ function sairGestor(){
   document.getElementById('gestor-gate').style.display='flex';
   document.getElementById('gestor-painel').classList.remove('show');
   document.querySelector('#nav-gestor .ni').textContent='🔒';
+}
+function configurarURL(){
+  const atual = localStorage.getItem(CHAVE_SYNC) || '';
+  const url = prompt('Cole aqui o URL do Google Apps Script:\n\nAtual: '+(atual?atual.substring(0,60)+'...':'nenhum'));
+  if(url && url.startsWith('https://')){
+    localStorage.setItem(CHAVE_SYNC, url);
+    toast('✅ URL configurado com sucesso!');
+  }
 }
 function alterarSenha(){
   const nova=prompt('Digite a nova senha (mínimo 6 caracteres):');
