@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ponto — Clínica Sognares</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g:#607466;--gd:#4a5a4f;--gl:#eef2ee;
+  --o:#9B4E2B;--ol:#fdf1ec;
+  --ow:#FCFBF7;--bd:#dedad3;--tx:#2c2a26;--mu:#7a7570;
+}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--ow);color:var(--tx);min-height:100vh;display:flex;flex-direction:column}
+
+/* HEADER */
+header{background:var(--g);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.hbrand{display:flex;align-items:center;gap:10px}
+.hicon{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:17px}
+.htitle{color:#fff;font-size:15px;font-weight:700;line-height:1.2}
+.hsub{color:rgba(255,255,255,.7);font-size:11px}
+#relogio{color:rgba(255,255,255,.93);font-size:20px;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:1px}
+
+/* MAIN */
+main{flex:1;padding:20px 18px;max-width:480px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:18px}
+
+/* STATUS */
+.status-card{background:#fff;border:1px solid var(--bd);border-radius:13px;padding:15px 18px;display:flex;align-items:center;gap:13px}
+.sdot{width:13px;height:13px;border-radius:50%;background:#ccc;transition:background .3s;flex-shrink:0}
+.sdot.dentro{background:#4caf50;box-shadow:0 0 0 4px #e8f5e9}
+.sdot.intervalo{background:#ff9800;box-shadow:0 0 0 4px #fff3e0}
+.sdot.fora{background:#9e9e9e;box-shadow:0 0 0 4px #f5f5f5}
+.sdot.livre{background:var(--g);box-shadow:0 0 0 4px var(--gl)}
+.stxt{flex:1}
+.slabel{font-size:12px;color:var(--mu)}
+.sval{font-size:14px;font-weight:600}
+
+.data-hoje{text-align:center;font-size:12px;color:var(--mu);font-weight:500;letter-spacing:.3px;text-transform:uppercase}
+
+/* BOTÕES PONTO */
+.botoes{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.bp{border:none;border-radius:13px;padding:20px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:9px;font-family:inherit;transition:transform .1s,opacity .2s;position:relative;overflow:hidden}
+.bp:active{transform:scale(.96)}
+.bp:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.bp .bicon{font-size:28px;line-height:1}
+.bp .blabel{font-size:13px;font-weight:700;color:#fff;text-align:center;line-height:1.3}
+.bp .bhint{font-size:10px;color:rgba(255,255,255,.72);text-align:center}
+.bp::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .15s}
+.bp:hover::after{background:rgba(255,255,255,.08)}
+.bp-e{background:#607466}.bp-si{background:#C17F3A}.bp-ri{background:#3A7A6A}.bp-s{background:#9B4E2B}
+.spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none}
+.bp.loading .bicon{display:none}.bp.loading .spinner{display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ÚLTIMO REGISTRO */
+.ultimo{background:var(--gl);border:1px solid #c8d6c8;border-radius:9px;padding:11px 15px;font-size:13px;color:var(--gd);display:none;align-items:center;gap:9px}
+.ultimo.show{display:flex}
+.ultimo strong{display:block;font-weight:700;font-size:14px}
+
+/* LISTA */
+.sec-title{font-size:11px;font-weight:700;color:var(--mu);letter-spacing:.8px;text-transform:uppercase;padding-bottom:5px;border-bottom:1px solid var(--bd);margin-bottom:4px}
+#lista-hoje{display:flex;flex-direction:column;gap:4px}
+.ri{display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:8px;background:#fff;border:1px solid var(--bd);font-size:12px}
+.rbadge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;flex-shrink:0}
+.b-e{background:#607466}.b-si{background:#C17F3A}.b-ri{background:#3A7A6A}.b-s{background:#9B4E2B}
+.rhora{font-weight:700;font-size:13px;margin-left:auto;font-variant-numeric:tabular-nums}
+.rdata-sep{font-size:11px;color:var(--mu);padding:7px 3px 3px;font-weight:700}
+.empty{text-align:center;color:var(--mu);font-size:12px;padding:16px 0}
+
+/* VIEWS */
+.view{display:none;flex-direction:column;gap:18px}
+.view.ativa{display:flex}
+
+/* NAV */
+nav{background:#fff;border-top:1px solid var(--bd);display:flex;padding:7px 16px 9px;max-width:480px;margin:0 auto;width:100%}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 0;border:none;background:none;cursor:pointer;font-family:inherit;border-radius:7px;transition:background .15s}
+.nb:hover{background:#f0ede6}
+.nb.ativo .ni{color:var(--g)}.nb.ativo .nt{color:var(--g);font-weight:700}
+.ni{font-size:19px;color:#999}.nt{font-size:10px;color:#999;font-weight:500}
+
+/* TOAST */
+#toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:11px 20px;border-radius:28px;font-size:13px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:9999;white-space:nowrap;max-width:90vw;text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ─── GESTOR ─── */
+/* Gate (senha) */
+.gate{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;gap:0}
+.gate-card{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:28px 24px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
+.gate-icon{font-size:40px;margin-bottom:4px}
+.gate-title{font-size:17px;font-weight:700;color:var(--tx)}
+.gate-sub{font-size:13px;color:var(--mu);line-height:1.5}
+.gate-input{width:100%;padding:11px 14px;border:1.5px solid var(--bd);border-radius:9px;font-size:15px;font-family:inherit;text-align:center;letter-spacing:3px;outline:none;transition:border .2s}
+.gate-input:focus{border-color:var(--g)}
+.btn-entrar{width:100%;padding:12px;background:var(--g);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn-entrar:hover{background:var(--gd)}
+.gate-erro{color:#c62828;font-size:12px;display:none}
+.gate-erro.show{display:block}
+
+/* Painel gestor */
+#gestor-painel{display:none;flex-direction:column;gap:18px}
+#gestor-painel.show{display:flex}
+.gestor-header{background:var(--o);border-radius:12px;padding:13px 17px;display:flex;align-items:center;justify-content:space-between}
+.gh-info{display:flex;align-items:center;gap:10px}
+.gh-icon{font-size:21px}
+.gh-txt{color:#fff}.gh-txt strong{display:block;font-size:14px;font-weight:700}
+.gh-txt span{font-size:11px;opacity:.8}
+.btn-sair{background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-sair:hover{background:rgba(255,255,255,.28)}
+
+/* Seletor de período */
+.periodo-card{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:15px 16px}
+.periodo-title{font-size:12px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+.periodo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.pbtn{padding:10px 8px;border:1.5px solid var(--bd);border-radius:9px;background:#fff;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;color:var(--mu);text-align:center;transition:all .15s}
+.pbtn.sel{border-color:var(--g);background:var(--gl);color:var(--gd)}
+.srow{display:flex;gap:8px}
+.srow select{flex:1;padding:9px 10px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:var(--tx)}
+.btn-calc{padding:9px 16px;background:var(--g);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-calc:hover{background:var(--gd)}
+
+/* Cards resumo */
+.resumo-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rc{background:#fff;border:1px solid var(--bd);border-radius:10px;padding:12px 8px;text-align:center}
+.rc-num{font-size:20px;font-weight:700;color:var(--g)}
+.rc-lbl{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.rc.destaque .rc-num{color:var(--o);font-size:22px}
+
+/* Tabela espelho */
+.tabela-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--bd)}
+.te{width:100%;border-collapse:collapse;font-size:11.5px}
+.te th{background:var(--g);color:#fff;padding:8px 9px;text-align:left;font-weight:600;white-space:nowrap}
+.te td{padding:7px 9px;border-bottom:1px solid var(--bd);background:#fff;white-space:nowrap}
+.te tr:last-child td{border-bottom:none}
+.te tr:nth-child(even) td{background:#faf9f5}
+.st-p{color:#2e7d32;font-weight:700}.st-f{color:#c62828;font-weight:700}.st-folga{color:#888}
+
+/* Botões de ação gestor */
+.btn-holerite{width:100%;padding:13px;background:var(--o);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-holerite:hover{opacity:.9}
+.btn-holerite:disabled{opacity:.4;cursor:not-allowed}
+.btn-sec{width:100%;padding:11px;background:#fff;color:var(--g);border:1.5px solid var(--g);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-sec:hover{background:var(--gl)}
+.btn-danger{width:100%;padding:11px;background:#fff;color:#c62828;border:1.5px solid #ef9a9a;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-alterar-senha{background:none;border:none;color:var(--mu);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;align-self:center}
+
+.info-periodo{font-size:12px;color:var(--mu);text-align:center;margin-top:-6px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hbrand">
+    <div class="hicon">🦷</div>
+    <div><div class="htitle">Clínica Sognares</div><div class="hsub">Controle de Ponto</div></div>
+  </div>
+  <div id="relogio">00:00:00</div>
+</header>
+
+<main>
+
+<!-- ===== VIEW: PONTO ===== -->
+<div class="view ativa" id="view-ponto">
+  <div class="data-hoje" id="data-hoje-txt"></div>
+  <div class="status-card">
+    <div class="sdot livre" id="sdot"></div>
+    <div class="stxt"><div class="slabel">Status atual</div><div class="sval" id="stxt">Pronto para iniciar</div></div>
+  </div>
+  <div class="botoes">
+    <button class="bp bp-e" id="bp-e" onclick="registrar('Entrada')"><div class="spinner"></div><div class="bicon">🟢</div><div class="blabel">Entrada</div><div class="bhint">Início do turno</div></button>
+    <button class="bp bp-si" id="bp-si" onclick="registrar('Saída Intervalo')" disabled><div class="spinner"></div><div class="bicon">☕</div><div class="blabel">Saída Intervalo</div><div class="bhint">Pausa / almoço</div></button>
+    <button class="bp bp-ri" id="bp-ri" onclick="registrar('Retorno Intervalo')" disabled><div class="spinner"></div><div class="bicon">↩️</div><div class="blabel">Retorno Intervalo</div><div class="bhint">Voltou da pausa</div></button>
+    <button class="bp bp-s" id="bp-s" onclick="registrar('Saída')" disabled><div class="spinner"></div><div class="bicon">🔴</div><div class="blabel">Saída</div><div class="bhint">Fim do turno</div></button>
+  </div>
+  <div class="ultimo" id="ultimo"><span style="font-size:19px">✅</span><div><strong id="ult-tipo"></strong><span id="ult-hora"></span></div></div>
+  <div><div class="sec-title">Registros de hoje</div><div id="lista-hoje"><div class="empty">Nenhum registro ainda hoje</div></div></div>
+</div>
+
+<!-- ===== VIEW: HISTÓRICO ===== -->
+<div class="view" id="view-historico">
+  <div class="sec-title">Todos os registros</div>
+  <div id="lista-hist"><div class="empty">Nenhum registro</div></div>
+</div>
+
+<!-- ===== VIEW: GESTOR ===== -->
+<div class="view" id="view-gestor">
+
+  <!-- GATE (senha) -->
+  <div class="gate" id="gestor-gate">
+    <div class="gate-card">
+      <div class="gate-icon">🔐</div>
+      <div class="gate-title">Área do Gestor</div>
+      <div class="gate-sub">Acesso restrito. Digite a senha para continuar.</div>
+      <input class="gate-input" type="password" id="senha-inp" placeholder="••••••••" onkeydown="if(event.key==='Enter')verificarSenha()">
+      <button class="btn-entrar" onclick="verificarSenha()">Entrar</button>
+      <span class="gate-erro" id="gate-erro">Senha incorreta. Tente novamente.</span>
+    </div>
+  </div>
+
+  <!-- PAINEL (só aparece após senha correta) -->
+  <div id="gestor-painel">
+
+    <div class="gestor-header">
+      <div class="gh-info"><div class="gh-icon">📊</div><div class="gh-txt"><strong>Painel do Gestor</strong><span>Clínica Sognares</span></div></div>
+      <button class="btn-sair" onclick="sairGestor()">🔒 Sair</button>
+    </div>
+
+    <!-- Seletor de período -->
+    <div class="periodo-card">
+      <div class="periodo-title">Gerar holerite para qual pagamento?</div>
+      <div class="periodo-grid">
+        <button class="pbtn sel" id="pb-20" onclick="selPeriodo('20')">💳 Dia 20<br><small style="font-weight:400;color:inherit;opacity:.7">Vale fixo — 40% do salário</small></button>
+        <button class="pbtn" id="pb-5" onclick="selPeriodo('5')">💳 Dia 5<br><small style="font-weight:400;color:inherit;opacity:.7">Fechamento + extras + comissão</small></button>
+      </div>
+      <!-- Campo de comissão — só aparece no dia 5 -->
+      <div id="bloco-comissao" style="display:none;background:var(--ol);border:1px solid #e8c4b0;border-radius:9px;padding:11px 13px;margin-bottom:2px">
+        <label style="font-size:12px;font-weight:700;color:var(--o);display:block;margin-bottom:6px">💰 Comissão do mês (R$)</label>
+        <input id="inp-comissao" type="number" min="0" step="0.01" placeholder="0,00"
+          style="width:100%;padding:9px 12px;border:1.5px solid #e8c4b0;border-radius:8px;font-size:15px;font-family:inherit;outline:none;background:#fff"
+          oninput="atualizarComissaoCard()">
+        <div style="font-size:11px;color:#8a5030;margin-top:5px">Digite o valor de comissão que ela ganhou neste mês. Será somado ao pagamento do dia 5.</div>
+      </div>
+      <div class="srow">
+        <select id="sel-mes">
+          <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+          <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+          <option value="7" selected>Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+          <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+        </select>
+        <select id="sel-ano"><option value="2026" selected>2026</option><option value="2025">2025</option></select>
+        <button class="btn-calc" onclick="calcular()">Calcular</button>
+      </div>
+      <div class="info-periodo" id="info-periodo">Selecione o período e clique em Calcular</div>
+    </div>
+
+    <!-- Resumo financeiro -->
+    <div class="resumo-row">
+      <div class="rc"><div class="rc-num" id="r-dias">—</div><div class="rc-lbl">Dias trabalhados</div></div>
+      <div class="rc"><div class="rc-num" id="r-he" style="color:#2e7d32">—</div><div class="rc-lbl">Horas extras</div></div>
+      <div class="rc"><div class="rc-num" id="r-falt" style="color:#c62828">—</div><div class="rc-lbl">H. faltantes</div></div>
+    </div>
+    <div class="resumo-row">
+      <div class="rc"><div class="rc-num" id="r-base" style="font-size:14px">—</div><div class="rc-lbl">Valor base</div></div>
+      <div class="rc"><div class="rc-num" id="r-adic" style="font-size:14px;color:#2e7d32">—</div><div class="rc-lbl">+ Extras / comissão</div></div>
+      <div class="rc destaque"><div class="rc-num" id="r-liq" style="font-size:16px">—</div><div class="rc-lbl">💰 Líquido</div></div>
+    </div>
+
+    <!-- Espelho do período -->
+    <div>
+      <div class="sec-title">Espelho do período</div>
+      <div class="tabela-wrap">
+        <table class="te">
+          <thead><tr><th>Data</th><th>Entrada</th><th>S.Int</th><th>R.Int</th><th>Saída</th><th>Total</th><th>Status</th></tr></thead>
+          <tbody id="corpo-espelho"><tr><td colspan="7" class="empty">Calcule um período para ver o espelho</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Ações -->
+    <button class="btn-holerite" id="btn-holerite" onclick="gerarHolerite()" disabled>
+      📄 Gerar Holerite em Word (.doc)
+    </button>
+    <button class="btn-sec" onclick="sincronizarPendentes()">🔄 Sincronizar pendentes com Sheets</button>
+    <button class="btn-sec" onclick="exportarCSV()">📥 Exportar espelho em CSV</button>
+    <button class="btn-danger" onclick="confirmarLimpar()">🗑️ Apagar todos os registros</button>
+    <button class="btn-alterar-senha" onclick="alterarSenha()">alterar senha do gestor</button>
+
+  </div>
+</div>
+
+</main>
+
+<nav>
+  <button class="nb ativo" id="nav-ponto" onclick="trocarView('ponto')"><span class="ni">👆</span><span class="nt">Ponto</span></button>
+  <button class="nb" id="nav-historico" onclick="trocarView('historico')"><span class="ni">📋</span><span class="nt">Histórico</span></button>
+  <button class="nb" id="nav-gestor" onclick="trocarView('gestor')"><span class="ni">🔒</span><span class="nt">Gestor</span></button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG
+// ------------------------------------------------------------
+const SALARIO_BASE   = 1100.00;
+const HORAS_DIA      = 5;         // 5h por dia (estágio 30h/sem)
+// Escala: 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
+const DIAS_TRABALHO  = [1,2,3,4,5,6]; // Seg a Sáb
+// ============================================================
+
+const CHAVE = 'sognares_regs_v3';
+const CHAVE_PWD = 'sognares_pwd';
+const CHAVE_SYNC = 'sognares_webhook_url';
+const SENHA_PADRAO = 'Sognares@2026';
+
+// ── Storage ──────────────────────────────────────────────
+function load(){ try{ return JSON.parse(localStorage.getItem(CHAVE)||'[]'); }catch{return [];} }
+function save(r){ localStorage.setItem(CHAVE, JSON.stringify(r)); }
+function getSenha(){ return localStorage.getItem(CHAVE_PWD) || SENHA_PADRAO; }
+
+// ── Helpers ───────────────────────────────────────────────
+const p2 = n => String(n).padStart(2,'0');
+function horaAgora(){ const d=new Date(); return `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`; }
+function dataHoje(){ const d=new Date(); return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; }
+function fmtData(iso){ const [y,m,d]=iso.split('-'); return `${p2(d)}/${p2(m)}/${y}`; }
+function fmtHora(h){ return h?h.substring(0,5):'—'; }
+function toMin(h){ if(!h) return 0; const p=h.split(':').map(Number); return p[0]*60+p[1]+(p[2]||0)/60; }
+function minStr(m){ const hh=Math.floor(Math.abs(m)/60); const mm=Math.round(Math.abs(m)%60); return `${hh}h${p2(mm)}`; }
+function brl(v){ return 'R$ '+v.toFixed(2).replace('.',','); }
+
+const MESES_NOME = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DIAS_NOME  = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+
+function nomeMes(n){ return MESES_NOME[n]||''; }
+function diasNoMes(ano,mes){ return new Date(ano,mes,0).getDate(); }
+function diasemana(ano,mes,dia){ return new Date(ano,mes-1,dia).getDay(); }
+function ehDiaUtil(dow){ return DIAS_TRABALHO.includes(dow); }
+
+// ── Relógio ───────────────────────────────────────────────
+setInterval(()=>{ document.getElementById('relogio').textContent = horaAgora(); }, 1000);
+document.getElementById('relogio').textContent = horaAgora();
+
+// Data de hoje no topo
+(function(){
+  const d=new Date();
+  const dias=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const ms=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  document.getElementById('data-hoje-txt').textContent=`${dias[d.getDay()]}, ${d.getDate()} de ${ms[d.getMonth()]} de ${d.getFullYear()}`;
+})();
+
+// ── Estado dos botões ─────────────────────────────────────
+function estadoHoje(){
+  const regs=load(), hoje=dataHoje();
+  const tipos=regs.filter(r=>r.data===hoje).map(r=>r.tipo);
+  if(tipos.includes('Saída'))         return 'fechado';
+  if(tipos.includes('Retorno Intervalo')) return 'retornou';
+  if(tipos.includes('Saída Intervalo'))   return 'intervalo';
+  if(tipos.includes('Entrada'))       return 'dentro';
+  return 'livre';
+}
+function atualizarBotoes(){
+  const e=estadoHoje(), dot=document.getElementById('sdot'), txt=document.getElementById('stxt');
+  ['bp-e','bp-si','bp-ri','bp-s'].forEach(id=>document.getElementById(id).disabled=true);
+  dot.className='sdot';
+  if(e==='livre'){     document.getElementById('bp-e').disabled=false;  dot.classList.add('livre');     txt.textContent='Pronto para iniciar'; }
+  if(e==='dentro'){    document.getElementById('bp-si').disabled=false; document.getElementById('bp-s').disabled=false; dot.classList.add('dentro'); txt.textContent='Trabalhando'; }
+  if(e==='intervalo'){ document.getElementById('bp-ri').disabled=false; dot.classList.add('intervalo'); txt.textContent='Em intervalo'; }
+  if(e==='retornou'){  document.getElementById('bp-si').disabled=false; document.getElementById('bp-s').disabled=false; dot.classList.add('dentro'); txt.textContent='Trabalhando'; }
+  if(e==='fechado'){   dot.classList.add('fora'); txt.textContent='Expediente encerrado'; }
+}
+
+// ── Registrar ponto ───────────────────────────────────────
+const BTN_ID={'Entrada':'bp-e','Saída Intervalo':'bp-si','Retorno Intervalo':'bp-ri','Saída':'bp-s'};
+const BADGE_C={'Entrada':'b-e','Saída Intervalo':'b-si','Retorno Intervalo':'b-ri','Saída':'b-s'};
+const EMO={'Entrada':'🟢','Saída Intervalo':'☕','Retorno Intervalo':'↩️','Saída':'🔴'};
+
+async function registrar(tipo){
+  const btn=document.getElementById(BTN_ID[tipo]);
+  btn.classList.add('loading'); btn.disabled=true;
+  const reg={ id:Date.now(), data:dataHoje(), hora:horaAgora(), tipo, timestamp:new Date().toISOString(), sync:false };
+  const regs=load(); regs.push(reg); save(regs);
+  btn.classList.remove('loading');
+  atualizarBotoes(); mostrarUltimo(tipo,reg.hora); renderHoje();
+  toast('✅ '+tipo+' registrada às '+fmtHora(reg.hora));
+  enviarSheets(reg);
+}
+async function enviarSheets(reg){
+  const url=localStorage.getItem(CHAVE_SYNC); if(!url) return;
+  try{
+    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(reg)});
+    const regs=load(), idx=regs.findIndex(r=>r.id===reg.id);
+    if(idx!==-1){ regs[idx].sync=true; save(regs); }
+  }catch(e){ console.log('offline',e); }
+}
+async function sincronizarPendentes(){
+  const url=localStorage.getItem(CHAVE_SYNC); if(!url){ toast('⚠️ URL do Sheets não configurado'); return; }
+  const regs=load(), pend=regs.filter(r=>!r.sync);
+  if(!pend.length){ toast('✅ Tudo já sincronizado!'); return; }
+  toast('⏳ Sincronizando '+pend.length+' registro(s)...');
+  let ok=0;
+  for(const reg of pend){
+    try{ await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(reg)});
+      const t=load(), i=t.findIndex(r=>r.id===reg.id); if(i!==-1){t[i].sync=true;save(t);} ok++; }catch{break;}
+  }
+  if(ok) toast('✅ '+ok+' registro(s) enviado(s) ao Sheets!');
+}
+
+function mostrarUltimo(tipo,hora){
+  const el=document.getElementById('ultimo');
+  document.getElementById('ult-tipo').textContent=tipo+' registrada!';
+  document.getElementById('ult-hora').textContent='Horário: '+fmtHora(hora);
+  el.classList.add('show');
+}
+function renderHoje(){
+  const regs=load(), hoje=dataHoje();
+  const deHoje=regs.filter(r=>r.data===hoje).sort((a,b)=>a.hora.localeCompare(b.hora));
+  const el=document.getElementById('lista-hoje');
+  if(!deHoje.length){ el.innerHTML='<div class="empty">Nenhum registro ainda hoje</div>'; return; }
+  el.innerHTML=deHoje.map(r=>`<div class="ri"><span>${EMO[r.tipo]||'🕐'}</span><span class="rbadge ${BADGE_C[r.tipo]||''}">${r.tipo}</span><span class="rhora">${fmtHora(r.hora)}</span></div>`).join('');
+}
+function renderHistorico(){
+  const regs=load().sort((a,b)=>b.timestamp.localeCompare(a.timestamp));
+  const el=document.getElementById('lista-hist');
+  if(!regs.length){ el.innerHTML='<div class="empty">Nenhum registro</div>'; return; }
+  const porData={};
+  regs.forEach(r=>{ if(!porData[r.data])porData[r.data]=[]; porData[r.data].push(r); });
+  let html='';
+  Object.keys(porData).sort().reverse().forEach(data=>{
+    html+=`<div class="rdata-sep">${fmtData(data)}</div>`;
+    porData[data].sort((a,b)=>a.hora.localeCompare(b.hora)).forEach(r=>{
+      html+=`<div class="ri"><span>${EMO[r.tipo]||'🕐'}</span><span class="rbadge ${BADGE_C[r.tipo]||''}">${r.tipo}</span><span class="rhora">${fmtHora(r.hora)}</span></div>`;
+    });
+  });
+  el.innerHTML=html;
+}
+
+// ── Navegação ─────────────────────────────────────────────
+function trocarView(nome){
+  ['ponto','historico','gestor'].forEach(v=>{
+    document.getElementById('view-'+v).classList.toggle('ativa',v===nome);
+    document.getElementById('nav-'+v).classList.toggle('ativo',v===nome);
+  });
+  if(nome==='historico') renderHistorico();
+  if(nome==='gestor'){
+    // Atualiza ícone do botão nav
+    const auth=sessionStorage.getItem('sg_auth')==='1';
+    document.querySelector('#nav-gestor .ni').textContent = auth ? '📊' : '🔒';
+    if(auth){ document.getElementById('gestor-gate').style.display='none'; document.getElementById('gestor-painel').classList.add('show'); }
+    else { document.getElementById('gestor-gate').style.display='flex'; document.getElementById('gestor-painel').classList.remove('show'); }
+    // Setar mês/ano atual
+    const d=new Date();
+    document.getElementById('sel-mes').value=d.getMonth()+1;
+    document.getElementById('sel-ano').value=d.getFullYear();
+  }
+}
+
+// ── Gestor: senha ─────────────────────────────────────────
+function verificarSenha(){
+  const inp=document.getElementById('senha-inp').value;
+  const erro=document.getElementById('gate-erro');
+  if(inp===getSenha()){
+    sessionStorage.setItem('sg_auth','1');
+    document.getElementById('gestor-gate').style.display='none';
+    document.getElementById('gestor-painel').classList.add('show');
+    document.querySelector('#nav-gestor .ni').textContent='📊';
+    erro.classList.remove('show');
+    document.getElementById('senha-inp').value='';
+  } else {
+    erro.classList.add('show');
+    document.getElementById('senha-inp').value='';
+    document.getElementById('senha-inp').focus();
+  }
+}
+function sairGestor(){
+  sessionStorage.removeItem('sg_auth');
+  document.getElementById('gestor-gate').style.display='flex';
+  document.getElementById('gestor-painel').classList.remove('show');
+  document.querySelector('#nav-gestor .ni').textContent='🔒';
+}
+function alterarSenha(){
+  const nova=prompt('Digite a nova senha (mínimo 6 caracteres):');
+  if(!nova||nova.length<6){ alert('Senha muito curta.'); return; }
+  const conf=prompt('Confirme a nova senha:');
+  if(nova!==conf){ alert('As senhas não coincidem.'); return; }
+  localStorage.setItem(CHAVE_PWD,nova);
+  toast('✅ Senha alterada com sucesso!');
+}
+
+// ── Cálculo de período ────────────────────────────────────
+let _periodoSel = '20';
+let _dadosCalc  = null;
+
+function selPeriodo(p){
+  _periodoSel=p;
+  document.getElementById('pb-20').classList.toggle('sel',p==='20');
+  document.getElementById('pb-5').classList.toggle('sel',p==='5');
+  document.getElementById('bloco-comissao').style.display = p==='5' ? 'block' : 'none';
+}
+
+function atualizarComissaoCard(){
+  // Recalcula o líquido em tempo real quando a comissão muda
+  if(!_dadosCalc || _dadosCalc.periodo!=='5') return;
+  const com = parseFloat(document.getElementById('inp-comissao').value)||0;
+  const adicTotal = _dadosCalc.adicional + com;
+  const liq = _dadosCalc.base60 + adicTotal - _dadosCalc.desconto;
+  document.getElementById('r-adic').textContent = '+'+brl(adicTotal);
+  document.getElementById('r-liq').textContent  = brl(liq);
+  _dadosCalc.comissao = com;
+  _dadosCalc.liquido  = liq;
+}
+
+function calcular(){
+  const mes=+document.getElementById('sel-mes').value;
+  const ano=+document.getElementById('sel-ano').value;
+
+  // ═══════════════════════════════════════════════════════
+  // DIA 20: vale fixo de 40% do salário — sem calcular horas
+  // ═══════════════════════════════════════════════════════
+  if(_periodoSel==='20'){
+    const vale = SALARIO_BASE * 0.40; // R$ 440,00
+    const dataPagto = `20/${p2(mes)}/${ano}`;
+    const descPeriodo = `Vale adiantamento — ${nomeMes(mes)}/${ano}`;
+
+    document.getElementById('info-periodo').textContent =
+      `Vale fixo de 40% do salário mensal | Pagamento: ${dataPagto}`;
+    document.getElementById('r-dias').textContent = '—';
+    document.getElementById('r-he').textContent   = '—';
+    document.getElementById('r-falt').textContent = '—';
+    document.getElementById('r-base').textContent = brl(vale);
+    document.getElementById('r-adic').textContent = '—';
+    document.getElementById('r-liq').textContent  = brl(vale);
+
+    document.getElementById('corpo-espelho').innerHTML =
+      `<tr><td colspan="7" style="text-align:center;padding:18px;color:#607466;font-weight:600;font-size:13px">
+        💳 Vale fixo de ${brl(vale)} (40% de R$ 1.100,00)<br>
+        <span style="font-weight:400;font-size:11px;color:#7a7570">Nenhum espelho de ponto necessário para este pagamento</span>
+      </td></tr>`;
+
+    _dadosCalc = {
+      periodo:'20', mes, ano, descPeriodo, dataPagto,
+      vale, liquido:vale, linhas:[], tipoDoc:'vale'
+    };
+    document.getElementById('btn-holerite').disabled=false;
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // DIA 5: 60% base + HE do mês inteiro − descontos + comissão
+  // ═══════════════════════════════════════════════════════
+  const comissao = parseFloat(document.getElementById('inp-comissao').value)||0;
+  const mesP = mes===12?1:mes+1, anoP = mes===12?ano+1:ano;
+  const ultimo = diasNoMes(ano,mes);
+  const dataIni = `${ano}-${p2(mes)}-01`;
+  const dataFim = `${ano}-${p2(mes)}-${p2(ultimo)}`;
+  const dataPagto = `05/${p2(mesP)}/${anoP}`;
+  const descPeriodo = `Fechamento ${nomeMes(mes)}/${ano} (mês completo)`;
+
+  document.getElementById('info-periodo').textContent =
+    `Período: 01 a ${ultimo} de ${nomeMes(mes)}/${ano} | Pagamento: ${dataPagto}`;
+
+  // Taxa por hora (baseada no mês inteiro)
+  let totalDiasUteisMes=0;
+  for(let d=1;d<=ultimo;d++){ if(ehDiaUtil(diasemana(ano,mes,d))) totalDiasUteisMes++; }
+  const taxaHora = SALARIO_BASE / (totalDiasUteisMes * HORAS_DIA);
+
+  // Registros
+  const regs=load(), porData={};
+  regs.forEach(r=>{ if(!porData[r.data])porData[r.data]={}; porData[r.data][r.tipo]=r.hora; });
+
+  // Processar mês inteiro
+  const ini=new Date(dataIni+'T12:00:00'), fim=new Date(dataFim+'T12:00:00');
+  const linhas=[];
+  let diasTrab=0, totalHE=0, totalFalt=0;
+
+  for(let cur=new Date(ini); cur<=fim; cur.setDate(cur.getDate()+1)){
+    const dow=cur.getDay();
+    if(!ehDiaUtil(dow)) continue;
+    const ds=`${cur.getFullYear()}-${p2(cur.getMonth()+1)}-${p2(cur.getDate())}`;
+    const reg=porData[ds]||{};
+    const entrada=reg['Entrada'], si=reg['Saída Intervalo'], ri=reg['Retorno Intervalo'], saida=reg['Saída'];
+    let trabMin=0, status='Falta';
+    if(entrada&&saida){
+      const bruto=toMin(saida)-toMin(entrada);
+      const intervalo=(si&&ri)?toMin(ri)-toMin(si):0;
+      trabMin=bruto-intervalo;
+      status='Presente'; diasTrab++;
+    }
+    const heMin   = status==='Presente'?Math.max(0,trabMin-HORAS_DIA*60):0;
+    const faltMin = status==='Presente'?Math.max(0,HORAS_DIA*60-trabMin):(HORAS_DIA*60);
+    totalHE  +=heMin;
+    totalFalt+=faltMin;
+    linhas.push({
+      ds, data:fmtData(ds),
+      entrada:fmtHora(entrada), si:fmtHora(si), ri:fmtHora(ri), saida:fmtHora(saida),
+      total:trabMin>0?minStr(trabMin):'—', status, trabMin, heMin, faltMin
+    });
+  }
+
+  const base60   = SALARIO_BASE * 0.60;                // R$ 660,00 (60%)
+  const adicional = (totalHE/60)*taxaHora;
+  const desconto  = (totalFalt/60)*taxaHora;
+  const liquido   = base60 + adicional - desconto + comissao;
+
+  // Cards
+  document.getElementById('r-dias').textContent = diasTrab+'/'+totalDiasUteisMes;
+  document.getElementById('r-he').textContent   = minStr(totalHE);
+  document.getElementById('r-falt').textContent = minStr(totalFalt);
+  document.getElementById('r-base').textContent = brl(base60)+' (60%)';
+  const adicTotal = adicional+comissao;
+  document.getElementById('r-adic').textContent = '+'+brl(adicTotal);
+  document.getElementById('r-liq').textContent  = brl(liquido);
+
+  // Tabela espelho (mês inteiro)
+  const corpo=document.getElementById('corpo-espelho');
+  corpo.innerHTML=linhas.map(l=>`<tr>
+    <td>${l.data}</td><td>${l.entrada}</td><td>${l.si}</td><td>${l.ri}</td><td>${l.saida}</td>
+    <td style="font-weight:600">${l.total}</td>
+    <td class="${l.status==='Presente'?'st-p':l.status==='Falta'?'st-f':'st-folga'}">${l.status}</td>
+  </tr>`).join('');
+
+  _dadosCalc={
+    periodo:'5', mes, ano, descPeriodo, dataPagto,
+    linhas, diasTrab, diasUteisMes:totalDiasUteisMes,
+    totalHE, totalFalt, base60, adicional, desconto, comissao, liquido,
+    taxaHora, dataIni:fmtData(dataIni), dataFim:fmtData(dataFim),
+    tipoDoc:'fechamento'
+  };
+  document.getElementById('btn-holerite').disabled=false;
+}
+
+// ── Gerar Holerite Word ───────────────────────────────────
+function cabecalhoWord(D, titulo){
+  return `
+<table style="margin-bottom:14px;width:100%;border-collapse:collapse"><tr>
+  <td style="width:60%;vertical-align:top">
+    <div style="font-size:16pt;font-weight:bold;color:#607466;margin-bottom:3px">Clinica Sognares</div>
+    <div style="font-size:9.5pt;color:#666">CNPJ: 39.839.086/0001-86</div>
+  </td>
+  <td style="text-align:right;vertical-align:top">
+    <div style="background:#607466;color:#fff;padding:8px 14px;border-radius:7px;display:inline-block;text-align:center">
+      <div style="font-size:9pt;opacity:.85">${titulo}</div>
+      <div style="font-size:14pt;font-weight:bold">Pagamento ${D.dataPagto}</div>
+    </div>
+  </td>
+</tr></table>
+<hr style="border:none;border-top:2px solid #607466;margin-bottom:14px">
+<table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:10pt">
+  <tr>
+    <td style="width:50%;padding:4px 0"><span style="color:#666;font-size:9.5pt">Nome:</span> <strong>Vitoria Costa Zanelo</strong></td>
+    <td style="padding:4px 0"><span style="color:#666;font-size:9.5pt">Funcao:</span> Estagiaria Recepcionista</td>
+  </tr>
+  <tr>
+    <td style="padding:4px 0"><span style="color:#666;font-size:9.5pt">Referencia:</span> <strong>${D.descPeriodo}</strong></td>
+    <td style="padding:4px 0"><span style="color:#666;font-size:9.5pt">Carga horaria:</span> 30h semanais (5h/dia)</td>
+  </tr>
+  <tr>
+    <td style="padding:4px 0"><span style="color:#666;font-size:9.5pt">Horario:</span> Seg-Sex 14h-19h | Sab 09h-14h</td>
+    <td style="padding:4px 0"><span style="color:#666;font-size:9.5pt">Salario base:</span> <strong>R$ 1.100,00</strong></td>
+  </tr>
+</table>`;
+}
+
+function assinaturasWord(D){
+  return `
+<br><br>
+<table style="margin-top:24px;font-size:10pt;width:100%;border-collapse:collapse">
+  <tr>
+    <td style="width:45%;text-align:center;padding-top:40px;border-top:1.5px solid #333">
+      Vitoria Costa Zanelo<br><span style="color:#666;font-size:9pt">Estagiaria - Recepcionista</span>
+    </td>
+    <td style="width:10%"></td>
+    <td style="width:45%;text-align:center;padding-top:40px;border-top:1.5px solid #333">
+      Clinica Sognares<br><span style="color:#666;font-size:9pt">Responsavel</span>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="3" style="text-align:center;padding-top:10px">
+      <span style="color:#666;font-size:9pt">Pagamento: ${D.dataPagto} | Gerado em: ${new Date().toLocaleDateString('pt-BR')}</span>
+    </td>
+  </tr>
+</table>`;
+}
+
+function gerarHolerite(){
+  if(!_dadosCalc){ toast('Calcule um periodo primeiro'); return; }
+  const D=_dadosCalc;
+  let corpo='';
+
+  if(D.tipoDoc==='vale'){
+    corpo = cabecalhoWord(D,'RECIBO DE VALE') + `
+<div style="text-align:center;margin:30px 0">
+  <div style="background:#eef2ee;border:2px solid #607466;border-radius:12px;padding:24px;display:inline-block;min-width:280px">
+    <div style="font-size:11pt;color:#666;margin-bottom:8px">Vale adiantamento - 40% do salario mensal</div>
+    <div style="font-size:28pt;font-weight:bold;color:#607466">${brl(D.vale)}</div>
+    <div style="font-size:10pt;color:#888;margin-top:6px">Referencia: ${nomeMes(D.mes)}/${D.ano}</div>
+  </div>
+</div>
+<table style="width:100%;border-collapse:collapse;font-size:10.5pt;margin-top:10px">
+  <tr style="background:#f0f4f1">
+    <td style="padding:8px 12px;width:70%;font-weight:600">Adiantamento (40% de R$ 1.100,00)</td>
+    <td style="padding:8px 12px;text-align:right;font-weight:600">${brl(D.vale)}</td>
+  </tr>
+  <tr style="background:#607466;color:#fff">
+    <td style="padding:10px 12px;font-size:12pt;font-weight:bold">VALOR A RECEBER NO DIA 20</td>
+    <td style="padding:10px 12px;text-align:right;font-size:14pt;font-weight:bold">${brl(D.vale)}</td>
+  </tr>
+</table>` + assinaturasWord(D);
+
+  } else {
+    const linhasHTML=D.linhas.map(l=>`
+      <tr>
+        <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt">${l.data}</td>
+        <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt">${l.entrada}</td>
+        <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt">${l.si}</td>
+        <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt">${l.ri}</td>
+        <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt">${l.saida}</td>
+        <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt;font-weight:bold">${l.total}</td>
+        <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt;font-weight:bold;color:${l.status==='Presente'?'#2e7d32':l.status==='Falta'?'#c62828':'#888'}">${l.status}</td>
+      </tr>`).join('');
+
+    const linhaComissao = D.comissao>0
+      ? `<tr><td style="padding:6px 0;color:#9B4E2B">Comissao do mes</td><td style="text-align:right;color:#9B4E2B;font-weight:bold">+ ${brl(D.comissao)}</td></tr>`
+      : '';
+
+    corpo = cabecalhoWord(D,'HOLERITE - FECHAMENTO') + `
+<div style="font-size:12pt;font-weight:bold;color:#4a5a4f;border-bottom:1.5px solid #607466;padding-bottom:3px;margin:14px 0 8px">Espelho de Ponto - ${nomeMes(D.mes)}/${D.ano}</div>
+<table style="width:100%;border-collapse:collapse;font-size:9.5pt;margin-bottom:14px">
+  <thead><tr>
+    <th style="background:#607466;color:#fff;padding:6px 8px;text-align:center">Data</th>
+    <th style="background:#607466;color:#fff;padding:6px 8px;text-align:center">Entrada</th>
+    <th style="background:#607466;color:#fff;padding:6px 8px;text-align:center">S.Int</th>
+    <th style="background:#607466;color:#fff;padding:6px 8px;text-align:center">R.Int</th>
+    <th style="background:#607466;color:#fff;padding:6px 8px;text-align:center">Saida</th>
+    <th style="background:#607466;color:#fff;padding:6px 8px;text-align:center">Total</th>
+    <th style="background:#607466;color:#fff;padding:6px 8px;text-align:center">Status</th>
+  </tr></thead>
+  <tbody>${linhasHTML}</tbody>
+</table>
+<div style="font-size:12pt;font-weight:bold;color:#4a5a4f;border-bottom:1.5px solid #607466;padding-bottom:3px;margin:14px 0 8px">Resumo de Horas</div>
+<table style="width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:14px">
+  <tr><td style="padding:5px 0;width:65%;color:#666">Dias uteis no mes</td><td style="font-weight:bold">${D.diasUteisMes} dias</td></tr>
+  <tr><td style="padding:5px 0;color:#666">Dias trabalhados</td><td style="font-weight:bold">${D.diasTrab} dias</td></tr>
+  <tr><td style="padding:5px 0;color:#666">Faltas</td><td style="font-weight:bold;color:#c62828">${D.diasUteisMes-D.diasTrab} dia(s)</td></tr>
+  <tr><td style="padding:5px 0;color:#666">Horas extras</td><td style="font-weight:bold;color:#2e7d32">${minStr(D.totalHE)}</td></tr>
+  <tr><td style="padding:5px 0;color:#666">Horas faltantes</td><td style="font-weight:bold;color:#c62828">${minStr(D.totalFalt)}</td></tr>
+  <tr><td style="padding:5px 0;color:#666">Valor da hora</td><td>${brl(D.taxaHora)}</td></tr>
+</table>
+<div style="font-size:12pt;font-weight:bold;color:#4a5a4f;border-bottom:1.5px solid #607466;padding-bottom:3px;margin:14px 0 8px">Demonstrativo Financeiro</div>
+<table style="width:100%;border-collapse:collapse;font-size:10.5pt">
+  <tr><td style="padding:6px 0;width:70%;color:#555">Saldo do mes - 60% do salario base</td><td style="text-align:right;font-weight:bold">${brl(D.base60)}</td></tr>
+  <tr><td style="padding:6px 0;color:#2e7d32">Adicional horas extras (${minStr(D.totalHE)})</td><td style="text-align:right;color:#2e7d32;font-weight:bold">+ ${brl(D.adicional)}</td></tr>
+  ${linhaComissao}
+  <tr><td style="padding:6px 0;color:#c62828">Desconto faltas/atrasos (${minStr(D.totalFalt)})</td><td style="text-align:right;color:#c62828;font-weight:bold">- ${brl(D.desconto)}</td></tr>
+  <tr style="background:#f0f4f1"><td style="padding:8px;font-weight:bold">Nota: Vale de 40% (R$ 440,00) ja foi pago no dia 20</td><td style="padding:8px;text-align:right;color:#888">-</td></tr>
+  <tr style="background:#607466;color:#fff">
+    <td style="padding:10px 8px;font-size:12pt;font-weight:bold">VALOR LIQUIDO A PAGAR NO DIA 5</td>
+    <td style="padding:10px 8px;text-align:right;font-size:14pt;font-weight:bold">${brl(D.liquido)}</td>
+  </tr>
+</table>` + assinaturasWord(D);
+  }
+
+  const docHTML='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>@page Section1{size:21cm 29.7cm;margin:2cm 2.5cm}div.Section1{page:Section1}body{font-family:Arial,sans-serif;font-size:11pt;color:#222}</style></head><body><div class="Section1">'+corpo+'</div></body></html>';
+  const blob=new Blob(['﻿'+docHTML],{type:'application/msword'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const tipo=D.tipoDoc==='vale'?'Vale':'Fechamento';
+  a.download='Holerite_Vitoria_'+tipo+'_'+nomeMes(D.mes)+'_'+D.ano+'.doc';
+  a.click();
+  toast('Holerite gerado com sucesso!');
+}
+
+// ── CSV
+
+// ── CSV ───────────────────────────────────────────────────
+function exportarCSV(){
+  if(!_dadosCalc){ toast('⚠️ Calcule um período primeiro'); return; }
+  const D=_dadosCalc;
+  let csv='Data;Entrada;Saída Intervalo;Retorno Intervalo;Saída;Total;Status\n';
+  D.linhas.forEach(l=>{ csv+=`${l.data};${l.entrada};${l.si};${l.ri};${l.saida};${l.total};${l.status}\n`; });
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`Espelho_Sognares_${nomeMes(D.mes)}_${D.ano}.csv`;
+  a.click();
+  toast('✅ CSV exportado!');
+}
+
+// ── Limpar ────────────────────────────────────────────────
+function confirmarLimpar(){
+  if(confirm('Apagar TODOS os registros? Esta ação não pode ser desfeita.')){
+    localStorage.removeItem(CHAVE);
+    renderHoje(); renderHistorico(); atualizarBotoes();
+    toast('🗑️ Registros apagados');
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────────
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(window._tt);
+  window._tt=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── Init ──────────────────────────────────────────────────
+atualizarBotoes();
+renderHoje();
+</script>
+</body>
+</html>
