@@ -222,10 +222,10 @@ nav{background:#fff;border-top:1px solid var(--bd);display:flex;padding:7px 16px
         <input id="inp-comissao" type="number" min="0" step="0.01" placeholder="0,00"
           style="width:100%;padding:9px 12px;border:1.5px solid #e8c4b0;border-radius:8px;font-size:15px;font-family:inherit;outline:none;background:#fff;margin-bottom:8px"
           oninput="atualizarComissaoCard()">
-        <label style="font-size:12px;font-weight:700;color:var(--o);display:block;margin-bottom:6px">🚌 Feriados no mês (excluir da condução)</label>
-        <input id="inp-feriados" type="number" min="0" step="1" placeholder="0" value="0"
-          style="width:100%;padding:9px 12px;border:1.5px solid #e8c4b0;border-radius:8px;font-size:15px;font-family:inherit;outline:none;background:#fff">
-        <div style="font-size:11px;color:#8a5030;margin-top:5px">Comissão será somada ao pagamento. Feriados de Seg–Sáb serão descontados da condução (R$ 12,40/dia).</div>
+        <label style="font-size:12px;font-weight:700;color:var(--o);display:block;margin-bottom:6px">📅 Datas de feriados do mês (Seg–Sáb)</label>
+        <input id="inp-feriados" type="text" placeholder="Ex: 09/07, 20/07"
+          style="width:100%;padding:9px 12px;border:1.5px solid #e8c4b0;border-radius:8px;font-size:14px;font-family:inherit;outline:none;background:#fff">
+        <div style="font-size:11px;color:#8a5030;margin-top:5px">Digite as datas separadas por vírgula. Esses dias não contarão como falta e serão descontados da condução.</div>
       </div>
       <div class="srow">
         <select id="sel-mes">
@@ -668,8 +668,14 @@ function calcular(){
     });
   }
 
-  // Condução: dias úteis (Seg-Sáb) do mês de referência, menos feriados informados
-  const feriados = parseInt(document.getElementById('inp-feriados').value)||0;
+  // Feriados: parseia as datas digitadas e filtra as que são Seg-Sáb no mês de referência
+  const feriadosRaw = document.getElementById('inp-feriados').value;
+  const feriadosDatas = feriadosRaw.split(',').map(s=>s.trim()).filter(s=>s.length>=5).map(s=>{
+    const parts=s.split('/'); if(parts.length<2) return null;
+    const d=parseInt(parts[0]), m=parseInt(parts[1]), y=parts[2]?parseInt(parts[2]):anoRef;
+    return `${y}-${p2(m)}-${p2(d)}`;
+  }).filter(Boolean);
+  const feriados = feriadosDatas.length;
   const conducao = (totalDiasUteisMes - feriados) * CONDUCAO_DIA;
 
   const base60    = SALARIO_BASE * 0.60;               // R$ 660,00 (60%)
@@ -691,13 +697,13 @@ function calcular(){
   corpo.innerHTML=linhas.map(l=>`<tr>
     <td>${l.data}</td><td>${l.entrada}</td><td>${l.si}</td><td>${l.ri}</td><td>${l.saida}</td>
     <td style="font-weight:600">${l.total}</td>
-    <td class="${l.status==='Presente'?'st-p':l.status==='Falta'?'st-f':'st-folga'}">${l.status}</td>
+    <td class="${l.status==='Presente'?'st-p':l.status==='Falta'?'st-f':l.status==='Feriado'?'st-folga':'st-folga'}">${l.status}</td>
   </tr>`).join('');
 
   _dadosCalc={
     periodo:'5', mes:mesRef, ano:anoRef, descPeriodo, dataPagto,
     linhas, diasTrab, diasUteisMes:totalDiasUteisMes,
-    totalHE, totalFalt, base60, adicional, desconto, comissao, conducao, feriados, liquido,
+    totalHE, totalFalt, base60, adicional, desconto, comissao, conducao, feriados, feriadosDatas, liquido,
     taxaHora, dataIni:fmtData(dataIni), dataFim:fmtData(dataFim),
     tipoDoc:'fechamento'
   };
@@ -791,13 +797,14 @@ function gerarHolerite(){
         <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt">${l.ri}</td>
         <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt">${l.saida}</td>
         <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt;font-weight:bold">${l.total}</td>
-        <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt;font-weight:bold;color:${l.status==='Presente'?'#2e7d32':l.status==='Falta'?'#c62828':'#888'}">${l.status}</td>
+        <td style="padding:5px 7px;border:1px solid #ddd;text-align:center;font-size:9pt;font-weight:bold;color:${l.status==='Presente'?'#2e7d32':l.status==='Falta'?'#c62828':l.status==='Feriado'?'#1565C0':'#888'}">${l.status}</td>
       </tr>`).join('');
 
     const linhaComissao = D.comissao>0
       ? `<tr><td style="padding:6px 0;color:#9B4E2B">Comissao do mes</td><td style="text-align:right;color:#9B4E2B;font-weight:bold">+ ${brl(D.comissao)}</td></tr>`
       : '';
-  const linhaConducao = `<tr><td style="padding:6px 0;color:#1565C0">Conducao (${D.diasUteisMes - D.feriados} dias x R$ 12,40${D.feriados>0?' - '+D.feriados+' feriado(s)':''})</td><td style="text-align:right;color:#1565C0;font-weight:bold">+ ${brl(D.conducao)}</td></tr>`;
+  const descFeriados = D.feriados>0 ? ` (excl. ${D.feriados} feriado${D.feriados>1?'s':''}: ${D.feriadosDatas.map(f=>f.split('-').reverse().slice(0,2).join('/')).join(', ')})` : '';
+  const linhaConducao = `<tr><td style="padding:6px 0;color:#1565C0">Conducao - ${D.diasUteisMes - D.feriados} dias uteis x R$ 12,40${descFeriados}</td><td style="text-align:right;color:#1565C0;font-weight:bold">+ ${brl(D.conducao)}</td></tr>`;
 
     corpo = cabecalhoWord(D,'HOLERITE - FECHAMENTO') + `
 <div style="font-size:12pt;font-weight:bold;color:#4a5a4f;border-bottom:1.5px solid #607466;padding-bottom:3px;margin:14px 0 8px">Espelho de Ponto - ${nomeMes(D.mes)}/${D.ano}</div>
@@ -817,7 +824,8 @@ function gerarHolerite(){
 <table style="width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:14px">
   <tr><td style="padding:5px 0;width:65%;color:#666">Dias uteis no mes</td><td style="font-weight:bold">${D.diasUteisMes} dias</td></tr>
   <tr><td style="padding:5px 0;color:#666">Dias trabalhados</td><td style="font-weight:bold">${D.diasTrab} dias</td></tr>
-  <tr><td style="padding:5px 0;color:#666">Faltas</td><td style="font-weight:bold;color:#c62828">${D.diasUteisMes-D.diasTrab} dia(s)</td></tr>
+  <tr><td style="padding:5px 0;color:#666">Faltas</td><td style="font-weight:bold;color:#c62828">${D.diasUteisMes-D.diasTrab-D.feriados} dia(s)</td></tr>
+  <tr><td style="padding:5px 0;color:#666">Feriados (nao descontados)</td><td style="font-weight:bold;color:#1565C0">${D.feriados} dia(s)${D.feriados>0?' - '+D.feriadosDatas.map(f=>f.split('-').reverse().slice(0,2).join('/')).join(', '):''}</td></tr>
   <tr><td style="padding:5px 0;color:#666">Horas extras</td><td style="font-weight:bold;color:#2e7d32">${minStr(D.totalHE)}</td></tr>
   <tr><td style="padding:5px 0;color:#666">Horas faltantes</td><td style="font-weight:bold;color:#c62828">${minStr(D.totalFalt)}</td></tr>
   <tr><td style="padding:5px 0;color:#666">Valor da hora</td><td>${brl(D.taxaHora)}</td></tr>
