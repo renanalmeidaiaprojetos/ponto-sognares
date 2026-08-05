@@ -179,6 +179,11 @@ nav{background:#fff;border-top:1px solid var(--bd);display:flex;padding:7px 16px
 <div class="view" id="view-historico">
   <div class="sec-title">Todos os registros</div>
   <div id="lista-hist"><div class="empty">Nenhum registro</div></div>
+  <div id="btn-add-manual" style="display:none;margin-top:4px">
+    <button onclick="adicionarRegistroManual()" style="width:100%;padding:11px;background:#fff;color:var(--g);border:1.5px solid var(--g);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px">
+      ➕ Adicionar registro manual
+    </button>
+  </div>
 </div>
 
 <!-- ===== VIEW: GESTOR ===== -->
@@ -406,16 +411,80 @@ function renderHistorico(){
   const regs=load().sort((a,b)=>b.timestamp.localeCompare(a.timestamp));
   const el=document.getElementById('lista-hist');
   if(!regs.length){ el.innerHTML='<div class="empty">Nenhum registro</div>'; return; }
+  const auth=sessionStorage.getItem('sg_auth')==='1';
   const porData={};
   regs.forEach(r=>{ if(!porData[r.data])porData[r.data]=[]; porData[r.data].push(r); });
   let html='';
   Object.keys(porData).sort().reverse().forEach(data=>{
     html+=`<div class="rdata-sep">${fmtData(data)}</div>`;
     porData[data].sort((a,b)=>a.hora.localeCompare(b.hora)).forEach(r=>{
-      html+=`<div class="ri"><span>${EMO[r.tipo]||'🕐'}</span><span class="rbadge ${BADGE_C[r.tipo]||''}">${r.tipo}</span><span class="rhora">${fmtHora(r.hora)}</span></div>`;
+      const btnEdit = auth
+        ? `<button onclick="editarRegistro(${r.id})" style="background:none;border:1px solid #ccc;border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;color:#666;margin-left:6px">✏️</button>
+           <button onclick="excluirRegistro(${r.id})" style="background:none;border:1px solid #ffcdd2;border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;color:#c62828;margin-left:2px">🗑️</button>`
+        : '';
+      html+=`<div class="ri"><span>${EMO[r.tipo]||'🕐'}</span><span class="rbadge ${BADGE_C[r.tipo]||''}">${r.tipo}</span><span class="rhora">${fmtHora(r.hora)}</span>${btnEdit}</div>`;
     });
   });
   el.innerHTML=html;
+}
+
+function editarRegistro(id){
+  if(sessionStorage.getItem('sg_auth')!=='1'){ toast('⚠️ Acesso restrito ao gestor'); return; }
+  const regs=load(), idx=regs.findIndex(r=>r.id===id);
+  if(idx===-1) return;
+  const reg=regs[idx];
+  const novaHora=prompt(`Editar horário do registro:\n${reg.tipo} — ${fmtData(reg.data)}\n\nHorário atual: ${fmtHora(reg.hora)}\nDigite o novo horário (HH:MM):`);
+  if(!novaHora) return;
+  if(!/^\d{2}:\d{2}$/.test(novaHora)){ toast('⚠️ Formato inválido. Use HH:MM'); return; }
+  const novaData=prompt(`Data atual: ${fmtData(reg.data)}\nDigite nova data (DD/MM/AAAA) ou deixe em branco para manter:`);
+  if(novaData!==null && novaData!==''){
+    if(!/^\d{2}\/\d{2}\/\d{4}$/.test(novaData)){ toast('⚠️ Formato de data inválido. Use DD/MM/AAAA'); return; }
+    const [d,m,y]=novaData.split('/');
+    regs[idx].data=`${y}-${m}-${d}`;
+  }
+  regs[idx].hora=novaHora+':00';
+  regs[idx].sync=false;
+  save(regs);
+  renderHistorico();
+  renderHoje();
+  atualizarBotoes();
+  toast('✅ Registro atualizado!');
+  enviarSheets(regs[idx]);
+}
+
+function excluirRegistro(id){
+  if(sessionStorage.getItem('sg_auth')!=='1'){ toast('⚠️ Acesso restrito ao gestor'); return; }
+  const regs=load(), idx=regs.findIndex(r=>r.id===id);
+  if(idx===-1) return;
+  const reg=regs[idx];
+  if(!confirm(`Excluir este registro?\n${reg.tipo} — ${fmtData(reg.data)} às ${fmtHora(reg.hora)}`)) return;
+  regs.splice(idx,1);
+  save(regs);
+  renderHistorico();
+  renderHoje();
+  atualizarBotoes();
+  toast('🗑️ Registro excluído');
+}
+
+function adicionarRegistroManual(){
+  if(sessionStorage.getItem('sg_auth')!=='1'){ toast('⚠️ Acesso restrito ao gestor'); return; }
+  const data=prompt('Data do registro (DD/MM/AAAA):');
+  if(!data||!/^\d{2}\/\d{2}\/\d{4}$/.test(data)){ toast('⚠️ Data inválida'); return; }
+  const hora=prompt('Horário (HH:MM):');
+  if(!hora||!/^\d{2}:\d{2}$/.test(hora)){ toast('⚠️ Horário inválido'); return; }
+  const tipos=['Entrada','Saída Intervalo','Retorno Intervalo','Saída'];
+  const tipo=prompt('Tipo de registro:\n1 - Entrada\n2 - Saída Intervalo\n3 - Retorno Intervalo\n4 - Saída\n\nDigite o número:');
+  const tipoSel=tipos[parseInt(tipo)-1];
+  if(!tipoSel){ toast('⚠️ Tipo inválido'); return; }
+  const [d,m,y]=data.split('/');
+  const reg={
+    id:Date.now(), data:`${y}-${m}-${d}`, hora:hora+':00',
+    tipo:tipoSel, timestamp:new Date().toISOString(), sync:false
+  };
+  const regs=load(); regs.push(reg); save(regs);
+  renderHistorico(); renderHoje(); atualizarBotoes();
+  toast('✅ Registro adicionado: '+tipoSel+' às '+hora);
+  enviarSheets(reg);
 }
 
 // ── Navegação ─────────────────────────────────────────────
@@ -424,7 +493,11 @@ function trocarView(nome){
     document.getElementById('view-'+v).classList.toggle('ativa',v===nome);
     document.getElementById('nav-'+v).classList.toggle('ativo',v===nome);
   });
-  if(nome==='historico') renderHistorico();
+  if(nome==='historico'){
+    renderHistorico();
+    const auth=sessionStorage.getItem('sg_auth')==='1';
+    document.getElementById('btn-add-manual').style.display=auth?'block':'none';
+  }
   if(nome==='gestor'){
     // Atualiza ícone do botão nav
     const auth=sessionStorage.getItem('sg_auth')==='1';
@@ -580,7 +653,12 @@ function calcular(){
       status='Presente'; diasTrab++;
     }
     const heMin   = status==='Presente'?Math.max(0,trabMin-HORAS_DIA*60):0;
-    const faltMin = status==='Presente'?Math.max(0,HORAS_DIA*60-trabMin):(HORAS_DIA*60);
+    // Saída antecipada vai para banco de horas, não desconta
+    // Só desconta se for FALTA (não veio). Atraso na entrada ainda desconta.
+    const entradaMin = entrada ? toMin(entrada) : 0;
+    const atrasoMin  = status==='Presente' ? Math.max(0, entradaMin - 14*60) : 0;
+    const faltMin    = status==='Falta' ? HORAS_DIA*60 : atrasoMin;
+    const bancoMin   = status==='Presente' ? Math.max(0, HORAS_DIA*60 - trabMin - atrasoMin) : 0;
     totalHE  +=heMin;
     totalFalt+=faltMin;
     linhas.push({
