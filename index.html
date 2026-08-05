@@ -209,7 +209,7 @@ nav{background:#fff;border-top:1px solid var(--bd);display:flex;padding:7px 16px
       <div class="periodo-title">Gerar holerite para qual pagamento?</div>
       <div class="periodo-grid">
         <button class="pbtn sel" id="pb-20" onclick="selPeriodo('20')">💳 Dia 20<br><small style="font-weight:400;color:inherit;opacity:.7">Vale fixo — 40% do salário</small></button>
-        <button class="pbtn" id="pb-5" onclick="selPeriodo('5')">💳 Dia 5<br><small style="font-weight:400;color:inherit;opacity:.7">Fechamento + extras + comissão</small></button>
+        <button class="pbtn" id="pb-5" onclick="selPeriodo('5')">💳 Dia 5<br><small style="font-weight:400;color:inherit;opacity:.7">Selecione o mês do pagamento</small></button>
       </div>
       <!-- Campo de comissão — só aparece no dia 5 -->
       <div id="bloco-comissao" style="display:none;background:var(--ol);border:1px solid #e8c4b0;border-radius:9px;padding:11px 13px;margin-bottom:2px">
@@ -536,19 +536,21 @@ function calcular(){
   // DIA 5: 60% base + HE do mês inteiro − descontos + comissão
   // ═══════════════════════════════════════════════════════
   const comissao = parseFloat(document.getElementById('inp-comissao').value)||0;
-  const mesP = mes===12?1:mes+1, anoP = mes===12?ano+1:ano;
-  const ultimo = diasNoMes(ano,mes);
-  const dataIni = `${ano}-${p2(mes)}-01`;
-  const dataFim = `${ano}-${p2(mes)}-${p2(ultimo)}`;
-  const dataPagto = `05/${p2(mesP)}/${anoP}`;
-  const descPeriodo = `Fechamento ${nomeMes(mes)}/${ano} (mês completo)`;
+  // Dia 5 de agosto = fechamento de JULHO (mês anterior ao selecionado)
+  const mesRef = mes===1?12:mes-1;
+  const anoRef = mes===1?ano-1:ano;
+  const dataPagto = `05/${p2(mes)}/${ano}`;
+  const ultimo = diasNoMes(anoRef,mesRef);
+  const dataIni = `${anoRef}-${p2(mesRef)}-01`;
+  const dataFim = `${anoRef}-${p2(mesRef)}-${p2(ultimo)}`;
+  const descPeriodo = `Fechamento ${nomeMes(mesRef)}/${anoRef} (mês completo)`;
 
   document.getElementById('info-periodo').textContent =
-    `Período: 01 a ${ultimo} de ${nomeMes(mes)}/${ano} | Pagamento: ${dataPagto}`;
+    `Período: 01 a ${ultimo} de ${nomeMes(mesRef)}/${anoRef} | Pagamento: ${dataPagto}`;
 
-  // Taxa por hora (baseada no mês inteiro)
+  // Taxa por hora (baseada no mês de referência)
   let totalDiasUteisMes=0;
-  for(let d=1;d<=ultimo;d++){ if(ehDiaUtil(diasemana(ano,mes,d))) totalDiasUteisMes++; }
+  for(let d=1;d<=ultimo;d++){ if(ehDiaUtil(diasemana(anoRef,mesRef,d))) totalDiasUteisMes++; }
   const taxaHora = SALARIO_BASE / (totalDiasUteisMes * HORAS_DIA);
 
   // Registros
@@ -607,7 +609,7 @@ function calcular(){
   </tr>`).join('');
 
   _dadosCalc={
-    periodo:'5', mes, ano, descPeriodo, dataPagto,
+    periodo:'5', mes:mesRef, ano:anoRef, descPeriodo, dataPagto,
     linhas, diasTrab, diasUteisMes:totalDiasUteisMes,
     totalHE, totalFalt, base60, adicional, desconto, comissao, liquido,
     taxaHora, dataIni:fmtData(dataIni), dataFim:fmtData(dataFim),
