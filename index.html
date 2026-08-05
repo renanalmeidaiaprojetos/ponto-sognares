@@ -313,7 +313,7 @@ function horaAgora(){ const d=new Date(); return `${p2(d.getHours())}:${p2(d.get
 function dataHoje(){ const d=new Date(); return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; }
 function fmtData(iso){ const [y,m,d]=iso.split('-'); return `${p2(d)}/${p2(m)}/${y}`; }
 function fmtHora(h){ return h?h.substring(0,5):'—'; }
-function toMin(h){ if(!h) return 0; const p=h.split(':').map(Number); return p[0]*60+p[1]+(p[2]||0)/60; }
+function toMin(h){ if(!h) return 0; const p=h.split(':').map(Number); return p[0]*60+p[1]; } // segundos ignorados
 function minStr(m){ const hh=Math.floor(Math.abs(m)/60); const mm=Math.round(Math.abs(m)%60); return `${hh}h${p2(mm)}`; }
 function brl(v){ return 'R$ '+v.toFixed(2).replace('.',','); }
 
