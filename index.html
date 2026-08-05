@@ -211,13 +211,16 @@ nav{background:#fff;border-top:1px solid var(--bd);display:flex;padding:7px 16px
         <button class="pbtn sel" id="pb-20" onclick="selPeriodo('20')">💳 Dia 20<br><small style="font-weight:400;color:inherit;opacity:.7">Vale fixo — 40% do salário</small></button>
         <button class="pbtn" id="pb-5" onclick="selPeriodo('5')">💳 Dia 5<br><small style="font-weight:400;color:inherit;opacity:.7">Selecione o mês do pagamento</small></button>
       </div>
-      <!-- Campo de comissão — só aparece no dia 5 -->
+      <!-- Campos extras — só aparecem no dia 5 -->
       <div id="bloco-comissao" style="display:none;background:var(--ol);border:1px solid #e8c4b0;border-radius:9px;padding:11px 13px;margin-bottom:2px">
         <label style="font-size:12px;font-weight:700;color:var(--o);display:block;margin-bottom:6px">💰 Comissão do mês (R$)</label>
         <input id="inp-comissao" type="number" min="0" step="0.01" placeholder="0,00"
-          style="width:100%;padding:9px 12px;border:1.5px solid #e8c4b0;border-radius:8px;font-size:15px;font-family:inherit;outline:none;background:#fff"
+          style="width:100%;padding:9px 12px;border:1.5px solid #e8c4b0;border-radius:8px;font-size:15px;font-family:inherit;outline:none;background:#fff;margin-bottom:8px"
           oninput="atualizarComissaoCard()">
-        <div style="font-size:11px;color:#8a5030;margin-top:5px">Digite o valor de comissão que ela ganhou neste mês. Será somado ao pagamento do dia 5.</div>
+        <label style="font-size:12px;font-weight:700;color:var(--o);display:block;margin-bottom:6px">🚌 Feriados no mês (excluir da condução)</label>
+        <input id="inp-feriados" type="number" min="0" step="1" placeholder="0" value="0"
+          style="width:100%;padding:9px 12px;border:1.5px solid #e8c4b0;border-radius:8px;font-size:15px;font-family:inherit;outline:none;background:#fff">
+        <div style="font-size:11px;color:#8a5030;margin-top:5px">Comissão será somada ao pagamento. Feriados de Seg–Sáb serão descontados da condução (R$ 12,40/dia).</div>
       </div>
       <div class="srow">
         <select id="sel-mes">
@@ -286,6 +289,7 @@ const SALARIO_BASE   = 1100.00;
 const HORAS_DIA      = 5;         // 5h por dia (estágio 30h/sem)
 // Escala: 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
 const DIAS_TRABALHO  = [1,2,3,4,5,6]; // Seg a Sáb
+const CONDUCAO_DIA   = 12.40;         // R$ por dia de condução
 // ============================================================
 
 const CHAVE = 'sognares_regs_v3';
@@ -586,17 +590,21 @@ function calcular(){
     });
   }
 
-  const base60   = SALARIO_BASE * 0.60;                // R$ 660,00 (60%)
+  // Condução: dias úteis (Seg-Sáb) do mês de referência, menos feriados informados
+  const feriados = parseInt(document.getElementById('inp-feriados').value)||0;
+  const conducao = (totalDiasUteisMes - feriados) * CONDUCAO_DIA;
+
+  const base60    = SALARIO_BASE * 0.60;               // R$ 660,00 (60%)
   const adicional = (totalHE/60)*taxaHora;
   const desconto  = (totalFalt/60)*taxaHora;
-  const liquido   = base60 + adicional - desconto + comissao;
+  const liquido   = base60 + adicional - desconto + comissao + conducao;
 
   // Cards
   document.getElementById('r-dias').textContent = diasTrab+'/'+totalDiasUteisMes;
   document.getElementById('r-he').textContent   = minStr(totalHE);
   document.getElementById('r-falt').textContent = minStr(totalFalt);
   document.getElementById('r-base').textContent = brl(base60)+' (60%)';
-  const adicTotal = adicional+comissao;
+  const adicTotal = adicional+comissao+conducao;
   document.getElementById('r-adic').textContent = '+'+brl(adicTotal);
   document.getElementById('r-liq').textContent  = brl(liquido);
 
@@ -611,7 +619,7 @@ function calcular(){
   _dadosCalc={
     periodo:'5', mes:mesRef, ano:anoRef, descPeriodo, dataPagto,
     linhas, diasTrab, diasUteisMes:totalDiasUteisMes,
-    totalHE, totalFalt, base60, adicional, desconto, comissao, liquido,
+    totalHE, totalFalt, base60, adicional, desconto, comissao, conducao, feriados, liquido,
     taxaHora, dataIni:fmtData(dataIni), dataFim:fmtData(dataFim),
     tipoDoc:'fechamento'
   };
@@ -711,6 +719,7 @@ function gerarHolerite(){
     const linhaComissao = D.comissao>0
       ? `<tr><td style="padding:6px 0;color:#9B4E2B">Comissao do mes</td><td style="text-align:right;color:#9B4E2B;font-weight:bold">+ ${brl(D.comissao)}</td></tr>`
       : '';
+  const linhaConducao = `<tr><td style="padding:6px 0;color:#1565C0">Conducao (${D.diasUteisMes - D.feriados} dias x R$ 12,40${D.feriados>0?' - '+D.feriados+' feriado(s)':''})</td><td style="text-align:right;color:#1565C0;font-weight:bold">+ ${brl(D.conducao)}</td></tr>`;
 
     corpo = cabecalhoWord(D,'HOLERITE - FECHAMENTO') + `
 <div style="font-size:12pt;font-weight:bold;color:#4a5a4f;border-bottom:1.5px solid #607466;padding-bottom:3px;margin:14px 0 8px">Espelho de Ponto - ${nomeMes(D.mes)}/${D.ano}</div>
@@ -740,6 +749,7 @@ function gerarHolerite(){
   <tr><td style="padding:6px 0;width:70%;color:#555">Saldo do mes - 60% do salario base</td><td style="text-align:right;font-weight:bold">${brl(D.base60)}</td></tr>
   <tr><td style="padding:6px 0;color:#2e7d32">Adicional horas extras (${minStr(D.totalHE)})</td><td style="text-align:right;color:#2e7d32;font-weight:bold">+ ${brl(D.adicional)}</td></tr>
   ${linhaComissao}
+  ${linhaConducao}
   <tr><td style="padding:6px 0;color:#c62828">Desconto faltas/atrasos (${minStr(D.totalFalt)})</td><td style="text-align:right;color:#c62828;font-weight:bold">- ${brl(D.desconto)}</td></tr>
   <tr style="background:#f0f4f1"><td style="padding:8px;font-weight:bold">Nota: Vale de 40% (R$ 440,00) ja foi pago no dia 20</td><td style="padding:8px;text-align:right;color:#888">-</td></tr>
   <tr style="background:#607466;color:#fff">
