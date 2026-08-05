@@ -630,6 +630,15 @@ function calcular(){
   for(let d=1;d<=ultimo;d++){ if(ehDiaUtil(diasemana(anoRef,mesRef,d))) totalDiasUteisMes++; }
   const taxaHora = SALARIO_BASE / (totalDiasUteisMes * HORAS_DIA);
 
+  // Feriados: parseia as datas digitadas e filtra as que são Seg-Sáb no mês de referência
+  const feriadosRaw = document.getElementById('inp-feriados').value;
+  const feriadosDatas = feriadosRaw.split(',').map(s=>s.trim()).filter(s=>s.length>=5).map(s=>{
+    const parts=s.split('/'); if(parts.length<2) return null;
+    const d=parseInt(parts[0]), m=parseInt(parts[1]), y=parts[2]?parseInt(parts[2]):anoRef;
+    return `${y}-${p2(m)}-${p2(d)}`;
+  }).filter(Boolean);
+  const feriados = feriadosDatas.length;
+
   // Registros
   const regs=load(), porData={};
   regs.forEach(r=>{ if(!porData[r.data])porData[r.data]={}; porData[r.data][r.tipo]=r.hora; });
@@ -643,6 +652,12 @@ function calcular(){
     const dow=cur.getDay();
     if(!ehDiaUtil(dow)) continue;
     const ds=`${cur.getFullYear()}-${p2(cur.getMonth()+1)}-${p2(cur.getDate())}`;
+    // Pular feriados — marcar como Feriado sem contar como falta
+    if(feriadosDatas.includes(ds)){
+      linhas.push({ds, data:fmtData(ds), entrada:'—', si:'—', ri:'—', saida:'—',
+        total:'—', status:'Feriado', trabMin:0, heMin:0, faltMin:0});
+      continue;
+    }
     const reg=porData[ds]||{};
     const entrada=reg['Entrada'], si=reg['Saída Intervalo'], ri=reg['Retorno Intervalo'], saida=reg['Saída'];
     let trabMin=0, status='Falta';
@@ -668,14 +683,6 @@ function calcular(){
     });
   }
 
-  // Feriados: parseia as datas digitadas e filtra as que são Seg-Sáb no mês de referência
-  const feriadosRaw = document.getElementById('inp-feriados').value;
-  const feriadosDatas = feriadosRaw.split(',').map(s=>s.trim()).filter(s=>s.length>=5).map(s=>{
-    const parts=s.split('/'); if(parts.length<2) return null;
-    const d=parseInt(parts[0]), m=parseInt(parts[1]), y=parts[2]?parseInt(parts[2]):anoRef;
-    return `${y}-${p2(m)}-${p2(d)}`;
-  }).filter(Boolean);
-  const feriados = feriadosDatas.length;
   const conducao = (totalDiasUteisMes - feriados) * CONDUCAO_DIA;
 
   const base60    = SALARIO_BASE * 0.60;               // R$ 660,00 (60%)
