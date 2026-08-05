@@ -638,6 +638,12 @@ function calcular(){
     return `${y}-${p2(m)}-${p2(d)}`;
   }).filter(Boolean);
   const feriados = feriadosDatas.length;
+  // Dias uteis do mes ATUAL (mes do pagamento) para conducao
+  let diasUteisAtual = 0;
+  const totalDiasAtual = diasNoMes(ano, mes);
+  for(let d=1; d<=totalDiasAtual; d++){ if(ehDiaUtil(diasemana(ano,mes,d))) diasUteisAtual++; }
+  const conducao = diasUteisAtual * CONDUCAO_DIA;
+  const conducaoDias = diasUteisAtual;
 
   // Registros
   const regs=load(), porData={};
@@ -683,7 +689,7 @@ function calcular(){
     });
   }
 
-  const conducao = (totalDiasUteisMes - feriados) * CONDUCAO_DIA;
+  // conducao ja calculada acima com diasUteisAtual
 
   const base60    = SALARIO_BASE * 0.60;               // R$ 660,00 (60%)
   const adicional = (totalHE/60)*taxaHora;
@@ -710,7 +716,7 @@ function calcular(){
   _dadosCalc={
     periodo:'5', mes:mesRef, ano:anoRef, descPeriodo, dataPagto,
     linhas, diasTrab, diasUteisMes:totalDiasUteisMes,
-    totalHE, totalFalt, base60, adicional, desconto, comissao, conducao, feriados, feriadosDatas, liquido,
+    totalHE, totalFalt, base60, adicional, desconto, comissao, conducao, conducaoDias, feriados, feriadosDatas, liquido,
     taxaHora, dataIni:fmtData(dataIni), dataFim:fmtData(dataFim),
     tipoDoc:'fechamento'
   };
@@ -770,7 +776,7 @@ td{padding:4px 0}.label{color:#888;font-size:9.5pt}
   // ── FECHAMENTO DIA 5 ─────────────────────────────────────────────
   const comissaoLinha = D.comissao>0
     ? `<tr class="tr"><td>Comissão do mês</td><td style="text-align:right">${brl(D.comissao)}</td><td></td></tr>` : '';
-  const feriadosDesc = D.feriados>0 ? ` (excl. ${D.feriados} feriado${D.feriados>1?'s':''})` : '';
+  const feriadosDesc = ''; // feriados nao afetam a conducao, so o calculo de faltas
   const descontoFaltaLinha = D.desconto>0
     ? `<tr class="tr"><td>Desconto por faltas/atrasos</td><td></td><td style="text-align:right">${brl(D.desconto)}</td></tr>` : '';
   const totalDescExib = D.desconto > 0 ? D.desconto + 440 : 440;
@@ -809,7 +815,7 @@ td{padding:4px 0}.label{color:#888;font-size:9.5pt}
   <tr class="tr"><td>Salário base — 60% de R$ 1.100,00</td><td style="text-align:right">${brl(D.base60)}</td><td></td></tr>
   <tr class="tr-alt"><td>Adicional horas extras (${minStr(D.totalHE)})</td><td style="text-align:right">${brl(D.adicional)}</td><td></td></tr>
   ${comissaoLinha}
-  <tr class="tr"><td>Condução — ${D.conducaoDias} dias úteis × R$ 12,40${feriadosDesc}</td><td style="text-align:right">${brl(D.conducao)}</td><td></td></tr>
+  <tr class="tr"><td>Condução — ${D.conducaoDias} dias úteis × R$ 12,40 (${nomeMes(D.mes)}/${D.ano})</td><td style="text-align:right">${brl(D.conducao)}</td><td></td></tr>
   <tr class="tr-alt"><td>Vale adiantamento pago no dia 20 (40%)</td><td></td><td style="text-align:right">${brl(440)}</td></tr>
   ${descontoFaltaLinha}
   <tr class="tr-total"><td>TOTAIS</td><td style="text-align:right">${brl(totalRec)}</td><td style="text-align:right">${brl(totalDescExib)}</td></tr>
